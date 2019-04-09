@@ -1,7 +1,7 @@
 %Purpose: Filter Program
 %Developed by Ryan Thompson
  
-filters = figure('name','filters','position', [100 500 100 150]);
+filters = figure('name','filters','position', [100 500 100 180]);
 f = figure('name','Project #2  - Ryan  Thompson', 'position', [220 100 600 600]);
 current_image = zeros(256,256);
 preview_image = zeros(256,256);
@@ -23,10 +23,12 @@ low_pass = uicontrol(filters);
 high_pass = uicontrol(filters, 'position', [20,50,60,20]);
 highboost = uicontrol(filters,'position',[20,80,60,20]);
 brightness = uicontrol(filters,'position',[20,110,60,20]);
+contrast = uicontrol(filters,'position',[20,140,60,20]);
 low_pass.String = 'Low Pass';
 high_pass.String = 'High Pass';
 highboost.String = 'Highboost';
 brightness.String = 'Brightness';
+contrast.String = 'Contrast';
 
 %button commands
 save.Callback      = @save_callback;
@@ -35,8 +37,9 @@ quit.Callback      = @quit_callback;
 apply.Callback     = @apply_callback;
 highboost.Callback = @highboost_callback;
 high_pass.Callback = @high_pass_callback;
-low_pass.Callback = @low_pass_callback;
+low_pass.Callback   = @low_pass_callback;
 brightness.Callback = @brightness_callback;
+contrast.Callback   = @contrast_callback;
 
 
 %Creates an axis for the current image
@@ -241,6 +244,45 @@ function brightness_callback(src,eventdata,handles)
     
     %Filter application
     preview_image = current_image + user_input;
+    
+    %Displays changes
+    figure(filters);
+    figure(f);
+    subplot(1,2,2);
+    imshow(preview_image);
+    title('Preview');
+    axis on;
+    
+    %Sends changes back to base
+    assignin('base','preview_image',preview_image);
+    assignin('base','no_change',false);
+end
+
+%Adjusts contrast
+function contrast_callback(src,eventdata,handles)
+    current_image = evalin('base','current_image');
+    image_loaded = evalin('base','image_loaded');
+    f = evalin('base','f');
+    filters = evalin('base','filters');
+    
+    %Preliminary condition
+    if( image_loaded == false )
+       disp('Please load an image');
+       return;
+    end
+    
+    %Region size selection
+    disp('What would you want your contrast scaling coefficient to be?');
+    c = input('c = ');
+    while( c > 100 | c < -100 )
+        disp('Scalar out of bounds. c must be in the range of [-100, 100]');
+        c = input('c = ');
+    end
+    
+    %Filter application
+    alpha = 1-(c*.01);
+    sigma = 1;
+    preview_image = locallapfilt(current_image, sigma, alpha, 'NumIntensityLevels', 100);
     
     %Displays changes
     figure(filters);
