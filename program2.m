@@ -118,10 +118,8 @@ end
 
 %Applies a spacial-domain smoothing
 function low_pass_callback(src,eventdata,handles)
-    preview_image = evalin('base','preview_image');
     current_image = evalin('base','current_image');
     image_loaded = evalin('base','image_loaded');
-    no_change = evalin('base','no_change');
     f = evalin('base','f');
     filters = evalin('base','filters');
     
@@ -129,10 +127,6 @@ function low_pass_callback(src,eventdata,handles)
     if( image_loaded == false )
        disp('Please load an image');
        return;
-    end
-    
-    if( no_change )
-        preview_image = current_image;
     end
     
     %Region size selection
@@ -145,7 +139,7 @@ function low_pass_callback(src,eventdata,handles)
     end
     
     %Filter application
-    preview_image = imgaussfilt(preview_image,2,'FilterSize',user_input);
+    preview_image = imgaussfilt(current_image,2,'FilterSize',user_input);
     
     %Displays changes
     figure(filters);
@@ -161,10 +155,8 @@ end
 
 %Applies a lowpass filter
 function high_pass_callback(src,eventdata,handles)
-    preview_image = evalin('base','preview_image');
     current_image = evalin('base','current_image');
     image_loaded = evalin('base','image_loaded');
-    no_change = evalin('base','no_change');
     f = evalin('base','f');
     filters = evalin('base','filters');
     
@@ -174,16 +166,10 @@ function high_pass_callback(src,eventdata,handles)
        return;
     end
     
-    %Checks if the image has been changed before this
-    %function was called
-    if( no_change )
-        preview_image = current_image;
-    end
-    
     %Filter application
     H = ones(3,3) * -1;
     H(2,2) = 8;
-    preview_image = imfilter(preview_image,H,'conv');
+    preview_image = imfilter(current_image,H,'conv');
     
     %Displays changes
     figure(filters);
@@ -197,11 +183,10 @@ function high_pass_callback(src,eventdata,handles)
     assignin('base','no_change',false);
 end
 
+%Applies highboost filter with specified boost scaling coefficient
 function highboost_callback(src,eventdata,handles)
-    preview_image = evalin('base','preview_image');
     current_image = evalin('base','current_image');
     image_loaded = evalin('base','image_loaded');
-    no_change = evalin('base','no_change');
     f = evalin('base','f');
     filters = evalin('base','filters');
     
@@ -209,10 +194,6 @@ function highboost_callback(src,eventdata,handles)
     if( image_loaded == false )
        disp('Please load an image');
        return;
-    end
-    
-    if( no_change )
-        preview_image = current_image;
     end
     
     %Region size selection
@@ -224,7 +205,7 @@ function highboost_callback(src,eventdata,handles)
     H = ones(3,3) * -1;
     H(2,2) = 8;
     H = c*H;
-    preview_image = imfilter(preview_image,H,'conv');
+    preview_image = imfilter(current_image,H,'conv');
     
     %Displays changes
     figure(filters);
