@@ -1,7 +1,7 @@
 %Purpose: Filter Program
 %Developed by Ryan Thompson
  
-filters = figure('name','filters','position', [100 600 100 100]);
+filters = figure('name','filters','position', [100 500 100 150]);
 f = figure('name','Project #2  - Ryan  Thompson', 'position', [220 100 600 600]);
 current_image = zeros(256,256);
 preview_image = zeros(256,256);
@@ -22,12 +22,11 @@ save.String = 'Save';
 low_pass = uicontrol(filters);
 high_pass = uicontrol(filters, 'position', [20,50,60,20]);
 highboost = uicontrol(filters,'position',[20,80,60,20]);
+brightness = uicontrol(filters,'position',[20,110,60,20]);
 low_pass.String = 'Low Pass';
-
 high_pass.String = 'High Pass';
-
 highboost.String = 'Highboost';
-
+brightness.String = 'Brightness';
 
 %button commands
 save.Callback      = @save_callback;
@@ -35,9 +34,9 @@ load.Callback      = @load_callback;
 quit.Callback      = @quit_callback;
 apply.Callback     = @apply_callback;
 highboost.Callback = @highboost_callback;
-
 high_pass.Callback = @high_pass_callback;
 low_pass.Callback = @low_pass_callback;
+brightness.Callback = @brightness_callback;
 
 
 %Creates an axis for the current image
@@ -108,6 +107,7 @@ function apply_callback(src,eventdata,handles)
     %Displays the change in current windows
     subplot(1,2,1);
     imshow(current_image);
+    title('Current');
     axis on;
     
     %Assigns variables back to base
@@ -146,6 +146,7 @@ function low_pass_callback(src,eventdata,handles)
     figure(f);
     subplot(1,2,2);
     imshow(preview_image);
+    title('Preview');
     axis on;
     
     %Sends changes back to base
@@ -176,6 +177,7 @@ function high_pass_callback(src,eventdata,handles)
     figure(f);
     subplot(1,2,2);
     imshow(preview_image);
+    title('Preview');
     axis on;
     
     %Sends changes back to base
@@ -198,8 +200,7 @@ function highboost_callback(src,eventdata,handles)
     
     %Region size selection
     disp('What would you want your boost scaling coefficient to be?');
-    disp('c = ');
-    c = input('n = ');
+    c = input('c = ');
     
     %Filter application
     H = ones(3,3) * -1;
@@ -212,6 +213,41 @@ function highboost_callback(src,eventdata,handles)
     figure(f);
     subplot(1,2,2);
     imshow(preview_image);
+    title('Preview');
+    axis on;
+    
+    %Sends changes back to base
+    assignin('base','preview_image',preview_image);
+    assignin('base','no_change',false);
+end
+
+%Adjusts brightness
+function brightness_callback(src,eventdata,handles)
+    current_image = evalin('base','current_image');
+    image_loaded = evalin('base','image_loaded');
+    f = evalin('base','f');
+    filters = evalin('base','filters');
+    
+    %Preliminary condition
+    if( image_loaded == false )
+       disp('Please load an image');
+       return;
+    end
+    
+    %Brightness change request from user
+    disp('How much brighter or dimmer would you like the image?');
+    disp('Negative values -> dimmer. Positive values -> brighter');
+    user_input = input('Brightness constant = ');
+    
+    %Filter application
+    preview_image = current_image + user_input;
+    
+    %Displays changes
+    figure(filters);
+    figure(f);
+    subplot(1,2,2);
+    imshow(preview_image);
+    title('Preview');
     axis on;
     
     %Sends changes back to base

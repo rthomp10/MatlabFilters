@@ -22,10 +22,9 @@ save.String = 'Save';
 low_pass = uicontrol(filters);
 high_pass = uicontrol(filters, 'position', [20,50,60,20]);
 highboost = uicontrol(filters,'position',[20,80,60,20]);
+brightness = uicontrol(filters,'position',[20,110,60,20]);
 low_pass.String = 'Low Pass';
-
 high_pass.String = 'High Pass';
-
 highboost.String = 'Highboost';
 
 
@@ -118,10 +117,8 @@ end
 
 %Applies a spacial-domain smoothing
 function low_pass_callback(src,eventdata,handles)
-    preview_image = evalin('base','preview_image');
     current_image = evalin('base','current_image');
     image_loaded = evalin('base','image_loaded');
-    no_change = evalin('base','no_change');
     f = evalin('base','f');
     filters = evalin('base','filters');
     
@@ -129,10 +126,6 @@ function low_pass_callback(src,eventdata,handles)
     if( image_loaded == false )
        disp('Please load an image');
        return;
-    end
-    
-    if( no_change )
-        preview_image = current_image;
     end
     
     %Region size selection
@@ -145,7 +138,7 @@ function low_pass_callback(src,eventdata,handles)
     end
     
     %Filter application
-    preview_image = imgaussfilt(preview_image,2,'FilterSize',user_input);
+    preview_image = imgaussfilt(current_image,2,'FilterSize',user_input);
     
     %Displays changes
     figure(filters);
@@ -175,7 +168,7 @@ function high_pass_callback(src,eventdata,handles)
     %Filter application
     H = ones(3,3) * -1;
     H(2,2) = 8;
-    preview_image = imfilter(preview_image,H,'conv');
+    preview_image = imfilter(current_image,H,'conv');
     
     %Displays changes
     figure(filters);
@@ -189,6 +182,7 @@ function high_pass_callback(src,eventdata,handles)
     assignin('base','no_change',false);
 end
 
+%Applies highboost filter with specified boost scaling coefficient
 function highboost_callback(src,eventdata,handles)
     current_image = evalin('base','current_image');
     image_loaded = evalin('base','image_loaded');
@@ -211,6 +205,39 @@ function highboost_callback(src,eventdata,handles)
     H(2,2) = 8;
     H = c*H;
     preview_image = imfilter(current_image,H,'conv');
+    
+    %Displays changes
+    figure(filters);
+    figure(f);
+    subplot(1,2,2);
+    imshow(preview_image);
+    axis on;
+    
+    %Sends changes back to base
+    assignin('base','preview_image',preview_image);
+    assignin('base','no_change',false);
+end
+
+%Adjusts brightness
+function brightness_callback(src,eventdata,handles)
+    current_image = evalin('base','current_image');
+    image_loaded = evalin('base','image_loaded');
+    f = evalin('base','f');
+    filters = evalin('base','filters');
+    
+    %Preliminary condition
+    if( image_loaded == false )
+       disp('Please load an image');
+       return;
+    end
+    
+    %Brightness change request from user
+    disp('How much brighter or dimmer would you like the image?');
+    disp('Negative values -> dimmer. Positive values -> brighter');
+    user_input = input('Brightness constant = ');
+    
+    %Filter application
+    preview_image = current_image + user_input;
     
     %Displays changes
     figure(filters);
