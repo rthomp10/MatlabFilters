@@ -1,7 +1,7 @@
 %Purpose: Filter Program
 %Developed by Ryan Thompson
  
-filters = figure('name','filters','position', [100 500 100 180]);
+filters = figure('name','filters','position', [100 400 100 280]);
 f = figure('name','Project #2  - Ryan  Thompson', 'position', [220 100 600 600]);
 current_image = zeros(256,256);
 preview_image = zeros(256,256);
@@ -22,13 +22,16 @@ save.String = 'Save';
 low_pass = uicontrol(filters);
 high_pass = uicontrol(filters, 'position', [20,50,60,20]);
 highboost = uicontrol(filters,'position',[20,80,60,20]);
-brightness = uicontrol(filters,'position',[20,110,60,20]);
-contrast = uicontrol(filters,'position',[20,140,60,20]);
+bright_log = uicontrol(filters,'Style','slider','position',[20,110,60,20], 'Value', 0.5);
+brightness = uicontrol(filters,'position',[20,140,60,20]);
+contrast = uicontrol(filters,'position',[20,170,60,20]);
+global_histogram_eq = uicontrol(filters,'position',[20,200,60,20]);
 low_pass.String = 'Low Pass';
 high_pass.String = 'High Pass';
 highboost.String = 'Highboost';
 brightness.String = 'Brightness';
 contrast.String = 'Contrast';
+global_histogram_eq.String = 'Equalize';
 
 %button commands
 save.Callback      = @save_callback;
@@ -38,8 +41,10 @@ apply.Callback     = @apply_callback;
 highboost.Callback = @highboost_callback;
 high_pass.Callback = @high_pass_callback;
 low_pass.Callback   = @low_pass_callback;
+bright_log.Callback = @bright_log_callback;
 brightness.Callback = @brightness_callback;
 contrast.Callback   = @contrast_callback;
+global_histogram_eq.Callback = @global_histogram_eq_callback;
 
 
 %Creates an axis for the current image
@@ -66,6 +71,7 @@ function load_callback(hObject, eventdata, handles)
     imshow([256 256]);
     title('Preview');
     axis on;
+    hitogram_display(current_image);
     
     %Sends changes back to base
     assignin('base','current_image',current_image);
@@ -151,6 +157,7 @@ function low_pass_callback(src,eventdata,handles)
     imshow(preview_image);
     title('Preview');
     axis on;
+    hitogram_display(current_image, preview_image);
     
     %Sends changes back to base
     assignin('base','preview_image',preview_image);
@@ -182,6 +189,7 @@ function high_pass_callback(src,eventdata,handles)
     imshow(preview_image);
     title('Preview');
     axis on;
+    hitogram_display(current_image, preview_image);
     
     %Sends changes back to base
     assignin('base','preview_image',preview_image);
@@ -218,6 +226,7 @@ function highboost_callback(src,eventdata,handles)
     imshow(preview_image);
     title('Preview');
     axis on;
+    hitogram_display(current_image, preview_image);
     
     %Sends changes back to base
     assignin('base','preview_image',preview_image);
@@ -239,7 +248,6 @@ function brightness_callback(src,eventdata,handles)
     
     %Brightness change request from user
     disp('How much brighter or dimmer would you like the image?');
-    disp('Negative values -> dimmer. Positive values -> brighter');
     user_input = input('Brightness constant = ');
     
     %Filter application
@@ -252,6 +260,7 @@ function brightness_callback(src,eventdata,handles)
     imshow(preview_image);
     title('Preview');
     axis on;
+    hitogram_display(current_image, preview_image);
     
     %Sends changes back to base
     assignin('base','preview_image',preview_image);
@@ -291,6 +300,68 @@ function contrast_callback(src,eventdata,handles)
     imshow(preview_image);
     title('Preview');
     axis on;
+    hitogram_display(current_image, preview_image);
+    
+    %Sends changes back to base
+    assignin('base','preview_image',preview_image);
+    assignin('base','no_change',false);
+end
+
+%Adjusts brightness logarithmically
+function bright_log_callback(src,eventdata,handles)
+    current_image = evalin('base','current_image');
+    current_slider_val = evalin('base','bright_log.Value');
+    image_loaded = evalin('base','image_loaded');
+    f = evalin('base','f');
+    filters = evalin('base','filters');
+    
+    %Preliminary condition
+    if( image_loaded == false )
+       disp('Please load an image');
+       return;
+    end
+    
+    %Filter application
+    preview_image = current_image + 2^((current_slider_val*255+1)/32)-1;
+    
+    %Displays changes
+    figure(filters);
+    figure(f);
+    subplot(1,2,2);
+    imshow(preview_image);
+    title('Preview');
+    axis on;
+    hitogram_display(current_image, preview_image);
+    
+    %Sends changes back to base
+    assignin('base','preview_image',preview_image);
+    assignin('base','no_change',false);
+end
+
+%Performs a histogram equalization
+function global_histogram_eq_callback(src,eventdata,handles)
+    current_image = evalin('base','current_image');
+    image_loaded = evalin('base','image_loaded');
+    f = evalin('base','f');
+    filters = evalin('base','filters');
+    
+    %Preliminary condition
+    if( image_loaded == false )
+       disp('Please load an image');
+       return;
+    end
+    
+    %Filter application
+    preview_image = histeq(current_image);
+    
+    %Displays changes
+    figure(filters);
+    figure(f);
+    subplot(1,2,2);
+    imshow(preview_image);
+    title('Preview');
+    axis on;
+    hitogram_display(current_image, preview_image);
     
     %Sends changes back to base
     assignin('base','preview_image',preview_image);
@@ -380,4 +451,25 @@ else
     imwrite(image,file);
 end 
 cd(current_directory);
+end
+
+%Displays histogram differences
+function hitogram_display(hist1, hist2)
+    figure('name','Histograms','position', [900 450 410 200]);
+    if( nargin == 1 )
+        title('Current');
+        histogram(hist1);
+        return;
+    elseif( nargin == 2 )
+        subplot(1,2,1);
+        title('Current');
+        histogram(hist1);
+        subplot(1,2,2);
+        title('Preview');
+        histogram(hist2);
+        return;
+    end
+    
+    disp('Too many histograms');
+    
 end
