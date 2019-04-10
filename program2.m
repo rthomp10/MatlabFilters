@@ -1,6 +1,7 @@
 %Purpose: Filter Program
 %Developed by Ryan Thompson
  
+
 filters = figure('name','filters','position', [100 400 100 280]);
 f = figure('name','Project #2  - Ryan  Thompson', 'position', [220 100 600 600]);
 current_image = zeros(256,256);
@@ -18,7 +19,7 @@ load.String = 'Load';
 save = uicontrol(f,'position',[20,80,60,20]);
 save.String = 'Save';
 
-%Buttons - Filter Tools
+% Buttons - Spatial Domain 
 low_pass = uicontrol(filters);
 high_pass = uicontrol(filters, 'position', [20,50,60,20]);
 highboost = uicontrol(filters,'position',[20,80,60,20]);
@@ -35,7 +36,9 @@ contrast.String = 'Contrast';
 global_histogram_eq.String = 'Equalize';
 adaptive_histogram_eq.String = 'Adapt.Equalize';
 
-%button commands
+% Buttons - Frequency Domain
+
+% Button function calls
 save.Callback      = @save_callback;
 load.Callback      = @load_callback;
 quit.Callback      = @quit_callback;
@@ -59,6 +62,14 @@ title('Current');
 ax2 = subplot(1,2,2);
 axis image;
 title('Preview');
+
+% Main program functions
+% - load
+% - save
+% - quit
+% - apply
+% - import image
+% - save image
 
 %Adds image to axis
 function load_callback(hObject, eventdata, handles)
@@ -127,6 +138,103 @@ function apply_callback(src,eventdata,handles)
     assignin('base','preview_image',preview_image);
     assignin('base','no_change',no_change);
 end
+
+%Imports and converts an image to a matrix
+function [varargout]=open_image(varargin)
+%[picture]=open_image(file)
+current_directory=cd;
+
+if nargin<1,
+    [file,path]=uigetfile({...
+        '*.jpg;*.jpeg;*.bmp;*.gif;*.tif;*.tiff;*.png;*.pbm;*.pgm;*.ppm;*.pnm;*.pcx;*.ras;*.xwd;*.cur;*.ico','All Image Types';...
+        '*.jpg;*.jpeg','JPEG (*.jpg, *.jpeg)';...
+        '*.bmp','BMP (*.bmp)';...
+        '*.gif','GIF (*.gif)';...
+        '*.tif;*.tiff','TIFF (*.tif, *.tiff)';...
+        '*.png','PNG (*.png)';...
+        '*.pbm;*.pgm;*.ppm;*.pnm','PNM (*.pbm, *.pgm, *.ppm, *.pnm)';...
+        '*.pcx','PCX (*.pcx)';...
+        '*.ras','RAS (*.ras)';...
+        '*.xwd','XWD (*.xwd)';...
+        '*.cur;*.ico','Cursors and Icons (*.cur, *.ico)';...
+        '*.*','All files (*.*)'});  
+    if isequal(file,0)|isequal(path,0)
+       disp('File not found');
+       picture=[];
+       return
+    end
+    if strcmp(current_directory,path) == 0 & ~isequal(path,0)
+        cd(path);
+    end
+else
+    file=varargin{1};
+end
+varargout{1}=imread(file);
+if nargout > 1
+    varargout{2}=file;
+end
+if nargout > 2
+    varargout{3}=path;
+end
+cd(current_directory);
+end
+
+%Saves an image
+function save_image(varargin)
+%save_image(image,file,type)
+%must specify an 'image' array
+%if no 'file' is specified, will prompt for filename
+%if no 'type' is specified, will attempt to ascertain from filename
+
+current_directory=cd;
+if nargin<1,
+    fprintf(2,'must specify an image array as first argument of save_image()\n');
+    return;
+end
+image=varargin{1};
+if nargin >= 3
+    file=varargin{2};
+    ftype=varargin{3};
+elseif nargin == 2
+    file=varargin{2};
+else
+    [file,path,findex]=uiputfile({...
+        '*.ppm','PPM (*.ppm)';...
+        '*.pgm','PGM (*.pgm)';...
+        '*.pbm;*.pgm;*.ppm;*.pnm','PNM (*.pnm)';...
+        '*.jpg;*.jpeg','JPEG (*.jpg)';...
+        '*.png','PNG (*.png)';...
+        '*.bmp','BMP (*.bmp)';...
+        '*.tif;*.tiff','TIFF (*.tif)';...
+        '*.pcx','PCX (*.pcx)';...
+        '*.ras','RAS (*.ras)';...
+        '*.xwd','XWD (*.xwd)';...
+        '*.*','All files (*.*)'},...
+        'Save Image as ...');  
+    if isequal(file,0) | isequal(path,0)
+        disp('User pressed cancel');
+        return;
+    end
+    cd(path);
+end
+if nargin >= 3
+    imwrite(varargin{:});
+else
+    imwrite(image,file);
+end 
+cd(current_directory);
+end
+
+% Spatial domain functions
+% - low pass filter
+% - high pass filter
+% - highboost filter
+% - brightness adjustment
+% - contrast adjustmet
+% - logarithmic brightness adjustment
+% - global histogram equalizer
+% - adaptive histogram equalizer
+
 
 %Applies a spacial-domain smoothing
 function low_pass_callback(src,eventdata,handles)
@@ -411,91 +519,6 @@ function adaptive_histogram_eq_callback(src,eventdata,handles)
     assignin('base','no_change',false);
 end
 
-%Imports and converts an image to a matrix
-function [varargout]=open_image(varargin)
-%[picture]=open_image(file)
-current_directory=cd;
-
-if nargin<1,
-    [file,path]=uigetfile({...
-        '*.jpg;*.jpeg;*.bmp;*.gif;*.tif;*.tiff;*.png;*.pbm;*.pgm;*.ppm;*.pnm;*.pcx;*.ras;*.xwd;*.cur;*.ico','All Image Types';...
-        '*.jpg;*.jpeg','JPEG (*.jpg, *.jpeg)';...
-        '*.bmp','BMP (*.bmp)';...
-        '*.gif','GIF (*.gif)';...
-        '*.tif;*.tiff','TIFF (*.tif, *.tiff)';...
-        '*.png','PNG (*.png)';...
-        '*.pbm;*.pgm;*.ppm;*.pnm','PNM (*.pbm, *.pgm, *.ppm, *.pnm)';...
-        '*.pcx','PCX (*.pcx)';...
-        '*.ras','RAS (*.ras)';...
-        '*.xwd','XWD (*.xwd)';...
-        '*.cur;*.ico','Cursors and Icons (*.cur, *.ico)';...
-        '*.*','All files (*.*)'});  
-    if isequal(file,0)|isequal(path,0)
-       disp('File not found');
-       picture=[];
-       return
-    end
-    if strcmp(current_directory,path) == 0 & ~isequal(path,0)
-        cd(path);
-    end
-else
-    file=varargin{1};
-end
-varargout{1}=imread(file);
-if nargout > 1
-    varargout{2}=file;
-end
-if nargout > 2
-    varargout{3}=path;
-end
-cd(current_directory);
-end
-
-function save_image(varargin)
-%save_image(image,file,type)
-%must specify an 'image' array
-%if no 'file' is specified, will prompt for filename
-%if no 'type' is specified, will attempt to ascertain from filename
-
-current_directory=cd;
-if nargin<1,
-    fprintf(2,'must specify an image array as first argument of save_image()\n');
-    return;
-end
-image=varargin{1};
-if nargin >= 3
-    file=varargin{2};
-    ftype=varargin{3};
-elseif nargin == 2
-    file=varargin{2};
-else
-    [file,path,findex]=uiputfile({...
-        '*.ppm','PPM (*.ppm)';...
-        '*.pgm','PGM (*.pgm)';...
-        '*.pbm;*.pgm;*.ppm;*.pnm','PNM (*.pnm)';...
-        '*.jpg;*.jpeg','JPEG (*.jpg)';...
-        '*.png','PNG (*.png)';...
-        '*.bmp','BMP (*.bmp)';...
-        '*.tif;*.tiff','TIFF (*.tif)';...
-        '*.pcx','PCX (*.pcx)';...
-        '*.ras','RAS (*.ras)';...
-        '*.xwd','XWD (*.xwd)';...
-        '*.*','All files (*.*)'},...
-        'Save Image as ...');  
-    if isequal(file,0) | isequal(path,0)
-        disp('User pressed cancel');
-        return;
-    end
-    cd(path);
-end
-if nargin >= 3
-    imwrite(varargin{:});
-else
-    imwrite(image,file);
-end 
-cd(current_directory);
-end
-
 %Displays histogram differences
 function hitogram_display(hist1, hist2)
     figure('name','Histograms','position', [900 450 410 200]);
@@ -516,3 +539,13 @@ function hitogram_display(hist1, hist2)
     disp('Too many histograms');
     
 end
+
+% Frequency domain functions
+% - low pass filter
+% - high pass filter
+% - highboost filter
+% - brightness adjustment
+% - contrast adjustmet
+% - logarithmic brightness adjustment
+% - global histogram equalizer
+% - adaptive histogram equalizer
