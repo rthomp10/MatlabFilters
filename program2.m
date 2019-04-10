@@ -26,12 +26,14 @@ bright_log = uicontrol(filters,'Style','slider','position',[20,110,60,20], 'Valu
 brightness = uicontrol(filters,'position',[20,140,60,20]);
 contrast = uicontrol(filters,'position',[20,170,60,20]);
 global_histogram_eq = uicontrol(filters,'position',[20,200,60,20]);
+adaptive_histogram_eq = uicontrol(filters,'position',[20,230,60,20]);
 low_pass.String = 'Low Pass';
 high_pass.String = 'High Pass';
 highboost.String = 'Highboost';
 brightness.String = 'Brightness';
 contrast.String = 'Contrast';
 global_histogram_eq.String = 'Equalize';
+adaptive_histogram_eq.String = 'Adapt.Equalize';
 
 %button commands
 save.Callback      = @save_callback;
@@ -45,6 +47,7 @@ bright_log.Callback = @bright_log_callback;
 brightness.Callback = @brightness_callback;
 contrast.Callback   = @contrast_callback;
 global_histogram_eq.Callback = @global_histogram_eq_callback;
+adaptive_histogram_eq.Callback = @adaptive_histogram_eq_callback;
 
 
 %Creates an axis for the current image
@@ -322,7 +325,13 @@ function bright_log_callback(src,eventdata,handles)
     end
     
     %Filter application
-    preview_image = current_image + 2^((current_slider_val*255+1)/32)-1;
+    if(current_slider_val == .5)
+        preview_image = current_image;
+    elseif(current_slider_val > .5)
+        preview_image = current_image + 2^(((current_slider_val-.5)*510+1)/32)-1;
+    elseif(current_slider_val < .5)
+        preview_image = current_image - 2^(((.5-current_slider_val)*510+1)/32)-1;
+    end
     
     %Displays changes
     figure(filters);
@@ -338,7 +347,7 @@ function bright_log_callback(src,eventdata,handles)
     assignin('base','no_change',false);
 end
 
-%Performs a histogram equalization
+%Performs a global histogram equalization
 function global_histogram_eq_callback(src,eventdata,handles)
     current_image = evalin('base','current_image');
     image_loaded = evalin('base','image_loaded');
@@ -353,6 +362,40 @@ function global_histogram_eq_callback(src,eventdata,handles)
     
     %Filter application
     preview_image = histeq(current_image);
+    
+    %Displays changes
+    figure(filters);
+    figure(f);
+    subplot(1,2,2);
+    imshow(preview_image);
+    title('Preview');
+    axis on;
+    hitogram_display(current_image, preview_image);
+    
+    %Sends changes back to base
+    assignin('base','preview_image',preview_image);
+    assignin('base','no_change',false);
+end
+
+%Performs a adaptive histogram equalization
+function adaptive_histogram_eq_callback(src,eventdata,handles)
+    current_image = evalin('base','current_image');
+    image_loaded = evalin('base','image_loaded');
+    f = evalin('base','f');
+    filters = evalin('base','filters');
+    
+    %Preliminary condition
+    if( image_loaded == false )
+       disp('Please load an image');
+       return;
+    end
+    
+    %Filter application
+    LAB = rgb2lab(current_image);
+    L = LAB(:,:,1)/100;
+    L = adapthisteq(L,'NumTiles',[8 8],'ClipLimit',0.005);
+    LAB(:,:,1) = L*100;
+    preview_image = lab2rgb(LAB);
     
     %Displays changes
     figure(filters);
