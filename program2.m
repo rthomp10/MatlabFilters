@@ -1,7 +1,7 @@
 %Purpose: Filter Program
 %Developed by Ryan Thompson
  
-
+histograms = figure('name','Histograms','position', [850 500 410 200]);
 filters = figure('name','filters','position', [100 400 100 280]);
 f = figure('name','Project #2  - Ryan  Thompson', 'position', [220 100 600 600]);
 current_image = zeros(256,256);
@@ -52,7 +52,6 @@ contrast.Callback   = @contrast_callback;
 global_histogram_eq.Callback = @global_histogram_eq_callback;
 adaptive_histogram_eq.Callback = @adaptive_histogram_eq_callback;
 
-
 %Creates an axis for the current image
 ax1 = subplot(1,2,1);
 axis image;
@@ -82,7 +81,7 @@ function load_callback(hObject, eventdata, handles)
     title('Current');
     axis on;
     subplot(1,2,2);
-    imshow([256 256]);
+    imshow(current_image);
     title('Preview');
     axis on;
     hitogram_display(current_image);
@@ -521,7 +520,9 @@ end
 
 %Displays histogram differences
 function hitogram_display(hist1, hist2)
-    figure('name','Histograms','position', [900 450 410 200]);
+    f = evalin('base','histograms');
+    figure(f);
+    clf;
     if( nargin == 1 )
         title('Current');
         histogram(hist1);
@@ -544,6 +545,8 @@ end
 % - low pass filter
 % - high pass filter
 % - highboost filter
+% - band-pass
+% - band-stop
 % - brightness adjustment
 % - contrast adjustmet
 % - logarithmic brightness adjustment
